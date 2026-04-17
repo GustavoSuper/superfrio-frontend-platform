@@ -43,6 +43,10 @@ export default function Edit_ChecklistComp({ history }) {
   const [pdfButtonLocked, setPdfButtonLocked] = useState(false);
   const pdfButtonLockTimeoutRef = useRef(null);
 
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
+  const [pdfModalMessage, setPdfModalMessage] = useState("");
+  const [pdfModalReloadOnClose, setPdfModalReloadOnClose] = useState(false);
+
   useEffect(() => {
     return () => {
       if (pdfButtonLockTimeoutRef.current) {
@@ -50,6 +54,20 @@ export default function Edit_ChecklistComp({ history }) {
       }
     };
   }, []);
+
+  function openPdfModal(message, reloadOnClose) {
+    setPdfModalMessage(message);
+    setPdfModalReloadOnClose(!!reloadOnClose);
+    setPdfModalOpen(true);
+  }
+
+  function closePdfModal() {
+    setPdfModalOpen(false);
+    if (pdfModalReloadOnClose) {
+      setPdfModalReloadOnClose(false);
+      history.go(0);
+    }
+  }
 
   const url_string = window.location.href;
   const param = url_string.split("/");
@@ -136,10 +154,7 @@ export default function Edit_ChecklistComp({ history }) {
           setLoading(false);
           return;
         } else {
-          alert("PDF Gerado com sucesso. Clique no Botão Baixar PDF");
-          //history.push('/checklistcomps');
-          history.go(0);
-
+          openPdfModal("PDF Gerado com sucesso. Clique no Botão Baixar PDF", true);
           setLoading(false);
         }
       })
@@ -1248,6 +1263,44 @@ export default function Edit_ChecklistComp({ history }) {
           {/* /.modal-content */}
         </div>
         {/* /.modal-dialog */}
+      </div>
+
+      {pdfModalOpen && <div className="modal-backdrop fade in" />}
+
+      <div
+        className={`modal fade${pdfModalOpen ? " in" : ""}`}
+        id="modal-pdf-message"
+        style={{ display: pdfModalOpen ? "block" : "none" }}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="modal-dialog">
+          <div className="modal-content">
+            <div className="modal-header">
+              <button
+                type="button"
+                className="close"
+                aria-label="Close"
+                onClick={() => closePdfModal()}
+              >
+                <span aria-hidden="true">×</span>
+              </button>
+              <h4 className="modal-title">PDF</h4>
+            </div>
+            <div className="modal-body">
+              <p>{pdfModalMessage}</p>
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => closePdfModal()}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <Footer />
