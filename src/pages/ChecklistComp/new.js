@@ -90,7 +90,10 @@ export default function New_ChecklistComp({ history }) {
         
         await api.post('/checklistcomp/', dataobj)
         setLoading(false);
-        window.location.href = "/checklistcomps";
+        history.push('/checklistcomps');
+        setTimeout(() => {
+          history.go(0);
+        }, 0);
   
     };
 
