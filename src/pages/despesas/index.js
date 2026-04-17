@@ -171,36 +171,36 @@ export default function List_Despesas({ history }) {
     return dataFormatada
   }
 
-  async function intervalFilter(e){
-    const value = e.target.value;
+  // async function intervalFilter(e){
+  //   const value = e.target.value;
 
-    if(value === "Em qualquer data"){
-      setendDate(undefined)
-      setStartDate(undefined)
-    }
+  //   if(value === "Em qualquer data"){
+  //     setendDate(undefined)
+  //     setStartDate(undefined)
+  //   }
     
-    if(value === "No último ano"){
-      setendDate(getCurrentDate())
+  //   if(value === "No último ano"){
+  //     setendDate(getCurrentDate())
 
-      const data = new Date(getCurrentDate())
-      data.setFullYear(2023)
-      const novaData = data.toISOString().split('T')[0];
-      setStartDate(novaData)
-    }
+  //     const data = new Date(getCurrentDate())
+  //     data.setFullYear(2023)
+  //     const novaData = data.toISOString().split('T')[0];
+  //     setStartDate(novaData)
+  //   }
 
-    if(value === "Nos últimos 6 meses"){
-      setendDate(getCurrentDate())
+  //   if(value === "Nos últimos 6 meses"){
+  //     setendDate(getCurrentDate())
 
-      const data = new Date(getCurrentDate());
-      data.setMonth(data.getMonth() - 6);
-      const novaData = data.toISOString().split('T')[0];
-      setStartDate(novaData)
-    }
+  //     const data = new Date(getCurrentDate());
+  //     data.setMonth(data.getMonth() - 6);
+  //     const novaData = data.toISOString().split('T')[0];
+  //     setStartDate(novaData)
+  //   }
 
-    if(value === "Intervalo personalizado"){
-      setIntervalWindow(true)
-    }
-  }
+  //   if(value === "Intervalo personalizado"){
+  //     setIntervalWindow(true)
+  //   }
+  // }
 
   function submitInterval(e){
     e.preventDefault()
