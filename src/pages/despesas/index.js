@@ -171,36 +171,36 @@ export default function List_Despesas({ history }) {
     return dataFormatada
   }
 
-  // async function intervalFilter(e){
-  //   const value = e.target.value;
+  async function intervalFilter(e){
+    const value = e.target.value;
 
-  //   if(value === "Em qualquer data"){
-  //     setendDate(undefined)
-  //     setStartDate(undefined)
-  //   }
+    if(value === "Em qualquer data"){
+      setendDate(undefined)
+      setStartDate(undefined)
+    }
     
-  //   if(value === "No último ano"){
-  //     setendDate(getCurrentDate())
+    if(value === "No último ano"){
+      setendDate(getCurrentDate())
 
-  //     const data = new Date(getCurrentDate())
-  //     data.setFullYear(2023)
-  //     const novaData = data.toISOString().split('T')[0];
-  //     setStartDate(novaData)
-  //   }
+      const data = new Date(getCurrentDate())
+      data.setFullYear(2023)
+      const novaData = data.toISOString().split('T')[0];
+      setStartDate(novaData)
+    }
 
-  //   if(value === "Nos últimos 6 meses"){
-  //     setendDate(getCurrentDate())
+    if(value === "Nos últimos 6 meses"){
+      setendDate(getCurrentDate())
 
-  //     const data = new Date(getCurrentDate());
-  //     data.setMonth(data.getMonth() - 6);
-  //     const novaData = data.toISOString().split('T')[0];
-  //     setStartDate(novaData)
-  //   }
+      const data = new Date(getCurrentDate());
+      data.setMonth(data.getMonth() - 6);
+      const novaData = data.toISOString().split('T')[0];
+      setStartDate(novaData)
+    }
 
-  //   if(value === "Intervalo personalizado"){
-  //     setIntervalWindow(true)
-  //   }
-  // }
+    if(value === "Intervalo personalizado"){
+      setIntervalWindow(true)
+    }
+  }
 
   function submitInterval(e){
     e.preventDefault()
@@ -410,7 +410,7 @@ const exportToExcelSelected = async () => {
                       </button>
                     </div>
 
-                    <form  onSubmit={(e) => (submitFilterForm(e))} className="despesasFilter">
+                    {/* <form  onSubmit={(e) => (submitFilterForm(e))} className="despesasFilter">
                     <input type="text" placeholder="Buscar requisitante" onChange={(e) => (setSearchByName(e.target.value))}/>
                     <select defaultValue="opcao1" onChange={(e) => (intervalFilter(e))}>
                       <option value="opcao1">Em qualquer data</option>
@@ -419,13 +419,13 @@ const exportToExcelSelected = async () => {
                       <option>Intervalo personalizado</option>
                     </select>
                     <button type="submit" className="btn btn-info btn-flat margin" >Aplicar</button>
-                  </form>
+                  </form> */}
                   
                   </div>
 
                   
 
-                  <div className="selectInterval" style={intervalWindow ? {display: "block"} : {display: "none"}} onClick={(e) => {checkModalClose(e)}}>
+                  {/* <div className="selectInterval" style={intervalWindow ? {display: "block"} : {display: "none"}} onClick={(e) => {checkModalClose(e)}}>
                         <form className="contentInterval" onSubmit={(e) => (submitInterval(e))}>
                           <div className="closeSelector" onClick={() => (setIntervalWindow(false))}><p>X</p></div>
                           <h3>Intervalo Personalizado</h3>
@@ -439,7 +439,7 @@ const exportToExcelSelected = async () => {
                           </div>
                           <button type="submit" className="intervalBtn">Aplicar</button>
                         </form>
-                  </div>
+                  </div> */}
 
                   {/* <DataTableExtensions
                     {...tableData}
