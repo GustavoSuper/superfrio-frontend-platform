@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import carregando from "../../assets/loading.gif";
 import api from "../../services/api";
 import Header from "../../Header";
@@ -33,6 +33,17 @@ export default function Edit_ChecklistComp({ history }) {
   const [newitem, setNewItem] = useState('');
   const [tensoes, setTensoes] = useState([]);
   const [marcas, setMarcas] = useState([]);
+
+  const [pdfButtonLocked, setPdfButtonLocked] = useState(false);
+  const pdfButtonLockTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (pdfButtonLockTimeoutRef.current) {
+        clearTimeout(pdfButtonLockTimeoutRef.current);
+      }
+    };
+  }, []);
       
     const url_string = window.location.href;
     const param = url_string.split("/");
@@ -54,6 +65,19 @@ export default function Edit_ChecklistComp({ history }) {
     };
 
     async function generatePDF(){
+      if (pdfButtonLocked) {
+        return;
+      }
+
+      setPdfButtonLocked(true);
+      if (pdfButtonLockTimeoutRef.current) {
+        clearTimeout(pdfButtonLockTimeoutRef.current);
+      }
+      pdfButtonLockTimeoutRef.current = setTimeout(() => {
+        setPdfButtonLocked(false);
+        pdfButtonLockTimeoutRef.current = null;
+      }, 10000);
+
       setLoading(true);
 
       await api.post('/generatePDFPit/' + param[4], {})
@@ -272,7 +296,7 @@ export default function Edit_ChecklistComp({ history }) {
               
               {
                 status == '2' &&
-                <button className="btn btn-info" onClick={() => generatePDF()} style={{marginRight:8}}>
+                <button className="btn btn-info" onClick={() => generatePDF()} style={{marginRight:8}} disabled={loading || pdfButtonLocked}>
                   Re-gerar PDF
                 </button>   
               }
