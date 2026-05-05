@@ -66,49 +66,79 @@ export default function New_ChecklistComp({ history }) {
     async function handleSubmit(event) {
         setLoading(true);
         event.preventDefault();
-        
-        const userid = localStorage.getItem('sfuserid');
-        const nomeuser = localStorage.getItem('sfusernome');
-  
-        const dataobj = {
-          nos: nos, 
-          dataentrada: dataentrada,
-          nserie: nserie,
-          tensao: tensao,
-          gas: gas,
-          nativo: nativo,
-          garantia: garantia,
-          osgarantia: osgarantia,
-          status: '0',
-          idcliente: idcliente,
-          idcompressor: idcompressor,
-          idfabricante: idfabricante,
-          idrequester: userid,
-          nomerequester: nomeuser,
-          obsgeral: obsgeral
-        };
-        
-        await api.post('/checklistcomp/', dataobj)
-        setLoading(false);
-        history.push('/checklistcomps');
-        setTimeout(() => {
-          history.go(0);
-        }, 0);
-  
+
+        try {
+          const userid = localStorage.getItem('sfuserid');
+          const nomeuser = localStorage.getItem('sfusernome');
+
+          const dataobj = {
+            nos: nos, 
+            dataentrada: dataentrada,
+            nserie: nserie,
+            tensao: tensao,
+            gas: gas,
+            nativo: nativo,
+            garantia: garantia,
+            osgarantia: osgarantia,
+            status: '0',
+            idcliente: idcliente,
+            idcompressor: idcompressor,
+            idfabricante: idfabricante,
+            idrequester: userid,
+            nomerequester: nomeuser,
+            obsgeral: obsgeral
+          };
+
+          await api.post('/checklistcomp/', dataobj);
+          history.push('/checklistcomps');
+        } catch (error) {
+          alert(error?.response?.data?.error || error?.message || "Erro ao criar checklist");
+        } finally {
+          setLoading(false);
+        }
     };
 
     useEffect(() => {
-        setLoading(true);
-        loadTensoes();
-        loadClientes();
-        loadCompressores();
-        loadFabricantes();
+        let active = true;
+
+        async function init() {
+          setLoading(true);
+          try {
+            const [tensoesRes, clientesRes, compressoresRes, fabricantesRes] = await Promise.all([
+              api.get('/tensao'),
+              api.get('/cliente'),
+              api.get('/compressor'),
+              api.get('/fabricante'),
+            ]);
+
+            if (!active) return;
+
+            setTensoes(tensoesRes.data);
+            setClientes(clientesRes.data);
+            setCompressores(compressoresRes.data);
+            setFabricantes(fabricantesRes.data);
+          } catch (error) {
+            if (active) {
+              alert(error?.response?.data?.error || error?.message || "Erro ao carregar dados");
+            }
+          } finally {
+            if (active) {
+              setLoading(false);
+            }
+          }
+        }
+
+        init();
+
         setTimeout(() => {
           if(document.getElementById('menu_oscomp_novo')){
             document.getElementById('menu_oscomp_novo').className = "active";
-          }      
+          }
         }, 50);
-        setLoading(false);
+
+        return () => {
+          active = false;
+        };
     }, []);
 
 
