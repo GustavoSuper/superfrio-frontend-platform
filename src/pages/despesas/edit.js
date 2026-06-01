@@ -21,6 +21,8 @@ export default function Edit_ChecklistComp({ history }) {
   const [obsgeral, setObsgeral] = useState("");
   const [itens, setItens] = useState([]);
   const [valor, setValor] = useState(0);
+  const [valorDevido, setValorDevido] = useState(0);
+  const [canReviewItens, setCanReviewItens] = useState(false);
 
   const [pdfButtonLocked, setPdfButtonLocked] = useState(false);
   const pdfButtonLockTimeoutRef = useRef(null);
@@ -59,11 +61,69 @@ export default function Edit_ChecklistComp({ history }) {
     const response = await api.get(query);
     const data = await response.data;
     setItens(data);
-    let valor = 0;
-    data.map((item) => {
-      valor = valor + item.valor;
-    })
-    setValor(valor);
+    let valorCalc = 0;
+    let valorDevidoCalc = 0;
+    data.forEach((item) => {
+      if (String(item.status) !== "3") {
+        valorCalc = valorCalc + item.valor;
+      } else {
+        valorDevidoCalc = valorDevidoCalc + item.valor;
+      }
+    });
+    setValor(valorCalc);
+    setValorDevido(valorDevidoCalc);
+  }
+
+  async function checkApprOrAdmin() {
+    const userid = localStorage.getItem("sfuserid");
+    if (!userid) {
+      return;
+    }
+    const response = await api.get("/usuarios/" + userid);
+    const data = await response.data;
+    const isAdmin = !!data?.[0]?.admin;
+    const isAppr = !!data?.[0]?.web_appr;
+    if (isAdmin || isAppr) {
+      setCanReviewItens(true);
+    }
+    if (isAdmin) {
+      setAdmin(true);
+    }
+  }
+
+  async function rejectItem(itemId, currentComment) {
+    const response = prompt("Motivo da recusa do item:", currentComment || "");
+    if (response === null) {
+      return;
+    }
+    setLoading(true);
+    await api.put("/despesaItem/" + itemId, {
+      status: "3",
+      commaprovadorItem: response,
+    });
+    await loadCompItens();
+    setLoading(false);
+  }
+
+  async function approveItem(itemId) {
+    setLoading(true);
+    await api.put("/despesaItem/" + itemId, {
+      status: "2",
+      commaprovadorItem: "",
+    });
+    await loadCompItens();
+    setLoading(false);
+  }
+
+  function renderItemStatus(item) {
+    const s = String(item.status || "1");
+    if (s === "2") {
+      return <span className="label label-success">Aprovado</span>;
+    }
+    if (s === "3") {
+      return <span className="label label-danger">Reprovado</span>;
+    }
+    return <span className="label label-warning">Pendente</span>;
   }
 
   async function generatePDF() {
@@ -128,6 +188,7 @@ export default function Edit_ChecklistComp({ history }) {
 
   useEffect(() => {
     setLoading(true);
+    checkApprOrAdmin();
     loadCompItens();
     loadProd();
     setTimeout(() => {
@@ -256,12 +317,12 @@ export default function Edit_ChecklistComp({ history }) {
                           />
                         </div>
                       </div>
-                      <label className="col-sm-2 control-label" htmlFor="preco">
+                      <label className="col-sm-2 control-label" htmlFor="aprovador">
                         Aprovador*
                       </label>
                       <div className="col-sm-4">
                         <input
-                          id="preco"
+                          id="aprovador"
                           className="form-control"
                           required
                           disabled={true}
@@ -269,10 +330,7 @@ export default function Edit_ChecklistComp({ history }) {
                           value={nomeaprovador}
                         />
                       </div>
-                     
                     </div>
-
-                   
 
                     <div className="form-group">
                       <label className="col-sm-2" htmlFor="preco">
@@ -288,17 +346,32 @@ export default function Edit_ChecklistComp({ history }) {
                           value={nomerequester}
                         />
                       </div>
-                      <label className="col-sm-2 control-label" htmlFor="preco">
+                      <label className="col-sm-2 control-label" htmlFor="valor">
                         Valor*
                       </label>
-                      <div className="col-sm-4">
+                      <div className="col-sm-1">
                         <input
-                          id="preco"
+                          id="valor"
                           className="form-control"
                           required
                           disabled={true}
                           maxLength={200}
                           value={new Intl.NumberFormat('pt-br',{style: 'currency', currency:'BRL'}).format(valor)}
+                          style={{ minWidth: 118, paddingLeft: 6, paddingRight: 6, fontSize: 12 }}
+                        />
+                      </div>
+                      <label className="col-sm-1 control-label" htmlFor="devido">
+                        Devido
+                      </label>
+                      <div className="col-sm-2">
+                        <input
+                          id="devido"
+                          className="form-control"
+                          required
+                          disabled={true}
+                          maxLength={200}
+                          value={new Intl.NumberFormat('pt-br',{style: 'currency', currency:'BRL'}).format(valorDevido)}
+                          style={{ maxWidth: 118, paddingLeft: 6, paddingRight: 6, fontSize: 12 }}
                         />
                       </div>
                     </div>
@@ -366,13 +439,22 @@ export default function Edit_ChecklistComp({ history }) {
                                         <th>Descrição</th>
                                         <th>Valor</th>
                                         <th>Link Imagem</th>
+                                        <th>Status</th>
+                                        {canReviewItens && <th>Ações</th>}
                                       </tr>
 
                                       {itens &&
                                         itens.map((item) => (
-                                          <tr>
+                                          <tr key={item._id}>
                                             <td>{item.categoriaText}</td>
-                                            <td>{item.descr}</td>
+                                            <td>
+                                              {item.descr}
+                                              {String(item.status) === "3" && item.commaprovadorItem ? (
+                                                <div style={{ marginTop: 6 }}>
+                                                  <span className="label label-danger">Motivo: {item.commaprovadorItem}</span>
+                                                </div>
+                                              ) : null}
+                                            </td>
                                             <td>{new Intl.NumberFormat('pt-br',{style: 'currency', currency:'BRL'}).format(item.valor)}</td>
                                             <td>
                                               {item.foto ? (
@@ -386,6 +468,28 @@ export default function Edit_ChecklistComp({ history }) {
                                                 "-"
                                               )}
                                             </td>
+                                            <td>{renderItemStatus(item)}</td>
+                                            {canReviewItens && (
+                                              <td>
+                                                {String(item.status) === "3" ? (
+                                                  <button
+                                                    type="button"
+                                                    className="btn btn-xs btn-success"
+                                                    onClick={() => approveItem(item._id)}
+                                                  >
+                                                    Aprovar
+                                                  </button>
+                                                ) : (
+                                                  <button
+                                                    type="button"
+                                                    className="btn btn-xs btn-danger"
+                                                    onClick={() => rejectItem(item._id, item.commaprovadorItem)}
+                                                  >
+                                                    Recusar
+                                                  </button>
+                                                )}
+                                              </td>
+                                            )}
                                           </tr>
                                         ))}
                                     </tbody>

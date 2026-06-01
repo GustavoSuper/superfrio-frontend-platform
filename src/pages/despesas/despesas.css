@@ -1,5 +1,14 @@
 .despesasFilter{
     margin-bottom: 1em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f7fbf7;
+    border: 1px solid #e1efe2;
+    border-radius: 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
 }
 
 .despesasFilter input{
@@ -83,4 +92,46 @@
 
 .selectInterval .contentInterval .intervalBtn{
     margin-top: 1em;
+}
+
+.despesas-table-text {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rdt_TableHeadRow {
+    min-height: 42px;
+    border-top: 1px solid #e8edf2;
+    border-bottom: 1px solid #d5dde5;
+    background-color: #f7fafc;
+}
+
+.rdt_TableHeadRow .rdt_TableCol {
+    color: #23527c;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.rdt_TableRow {
+    min-height: 42px;
+    border-bottom-color: #eef2f5;
+}
+
+.rdt_TableRow:hover {
+    background-color: #f8fbfd;
+}
+
+.rdt_TableCell {
+    font-size: 12px;
+}
+
+.rdt_TableCell .label {
+    display: inline-block;
+    min-width: 72px;
+    padding: 4px 7px;
+    border-radius: 10px;
+    text-align: center;
 }
