@@ -417,47 +417,6 @@ export default function List_Despesas({ history }) {
   const [filterRequisitante, setFilterRequisitante] = useState("");
   const [filterPaid, setFilterPaid] = useState("all");
 
-  // Persistência de filtros entre navegações
-  function saveFiltersToSession() {
-    try {
-      const payload = {
-        searchByName,
-        startDate,
-        endDate,
-        filterArea,
-        filterStatus,
-        filterAprovador,
-        filterRequisitante,
-        filterPaid,
-        searchTable,
-      };
-      sessionStorage.setItem("despesas:filters", JSON.stringify(payload));
-    } catch (err) {
-      // não bloquear execução em caso de erro
-    }
-  }
-
-  function restoreFiltersFromSession() {
-    try {
-      const raw = sessionStorage.getItem("despesas:filters");
-      if (!raw) return;
-      const obj = JSON.parse(raw);
-      if (!obj) return;
-
-      if (obj.searchByName !== undefined) setSearchByName(obj.searchByName);
-      if (obj.startDate !== undefined) setStartDate(obj.startDate);
-      if (obj.endDate !== undefined) setendDate(obj.endDate);
-      if (obj.filterArea !== undefined) setFilterArea(obj.filterArea);
-      if (obj.filterStatus !== undefined) setFilterStatus(obj.filterStatus);
-      if (obj.filterAprovador !== undefined) setFilterAprovador(obj.filterAprovador);
-      if (obj.filterRequisitante !== undefined) setFilterRequisitante(obj.filterRequisitante);
-      if (obj.filterPaid !== undefined) setFilterPaid(obj.filterPaid);
-      if (obj.searchTable !== undefined) setSearchTable(obj.searchTable);
-    } catch (err) {
-      // ignore
-    }
-  }
-
   async function loadDespesas() {
     setLoading(true);
 
@@ -590,13 +549,8 @@ export default function List_Despesas({ history }) {
   useEffect(() => {
     setLoading(true);
     checkCanSetPaid();
-    // restaurar filtros salvos (se houver) antes de carregar
-    restoreFiltersFromSession();
     //loadProd();
-    // small timeout to ensure restored states propagate before load
-    setTimeout(() => {
-      loadDespesas();
-    }, 50);
+    loadDespesas();
     setMsgvazio("Nenhuma despesa encontrada");
     setTimeout(() => {
       if (document.getElementById("menu_desp_consulta")) {
@@ -607,11 +561,6 @@ export default function List_Despesas({ history }) {
       setLoading(false);
     }, 800);
   }, []);
-
-  // Salva filtros sempre que mudarem
-  useEffect(() => {
-    saveFiltersToSession();
-  }, [searchByName, startDate, endDate, filterArea, filterStatus, filterAprovador, filterRequisitante, filterPaid, searchTable]);
 
   async function handleRemove(id, item) {
     if (rowsSel.length > 0) {
