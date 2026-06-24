@@ -22,13 +22,17 @@ const DEFAULT_DESPESAS_COLUMN_ORDER = [
   "paidAt",
 ];
 
+const MAX_BULK_DELETE_COUNT = 10;
+const MAX_SELECTED_DESPESAS_PDF = 60;
+
 export default function List_Despesas({ history }) {
   const [prod, setProd] = useState([]);
   const [exportExcel, setExportExcel] = useState([]);
   const [loading, setLoading] = useState("");
   const [msgvazio, setMsgvazio] = useState("carregando...");
   const [rowsSel, setRowsSel] = useState([]);
-  const [selectedIDS, setselectedIDS] = useState([])
+  const [selectedIDS, setselectedIDS] = useState([]);
+  const [clearSelectedRows, setClearSelectedRows] = useState(false);
   const [canSetPaid, setCanSetPaid] = useState(false);
   const [paidEditMode, setPaidEditMode] = useState(false);
   const [paidUpdatingIds, setPaidUpdatingIds] = useState({});
@@ -59,6 +63,24 @@ export default function List_Despesas({ history }) {
 
   function efetivaBusca() {
     loadDespesas();
+  }
+
+  function getStatusLabel(status) {
+    if (String(status) === "0") return "Rascunho";
+    if (String(status) === "1") return "Aguardando Aprovação";
+    if (String(status) === "2") return "Aprovado";
+    if (String(status) === "3") return "Reprovado";
+    return "Desconhecido";
+  }
+
+  function getBulkDeleteConfirmationText(count) {
+    return `REMOVER ${count} DESPESAS`;
+  }
+
+  function resetSelection() {
+    setRowsSel([]);
+    setselectedIDS([]);
+    setClearSelectedRows((prev) => !prev);
   }
 
   const CustomStatus = ({ row }) =>
@@ -613,42 +635,84 @@ export default function List_Despesas({ history }) {
     saveFiltersToSession();
   }, [searchByName, startDate, endDate, filterArea, filterStatus, filterAprovador, filterRequisitante, filterPaid, searchTable]);
 
-  async function handleRemove(id, item) {
-    if (rowsSel.length > 0) {
-      if (window.confirm("Confirma remoção dos itens selecionados ?")) {
-        setLoading(true);
-        rowsSel.map(async (item) => {
-          await api
-            .delete("/despesa/" + item._id)
-            .then((res) => {
-              if (res.data.error != undefined) {
-                alert(res.data.error);
-                setLoading(false);
-                return;
-              } else {
-                loadDespesas();
-                setLoading(false);
-              }
-            })
-            .catch((error) => {
-              alert(error);
-              setLoading(false);
-              return;
-            });
-        });
-      }
-    } else {
+  async function handleRemove() {
+    if (!rowsSel || rowsSel.length === 0) {
       alert("Nenhum registro selecionado !");
+      return;
+    }
+
+    if (rowsSel.length > MAX_BULK_DELETE_COUNT) {
+      alert(`Por segurança, é permitido remover no máximo ${MAX_BULK_DELETE_COUNT} despesas por vez.`);
+      return;
+    }
+
+    const invalidRows = rowsSel.filter((item) => !["0", "1"].includes(String(item.status)));
+    if (invalidRows.length > 0) {
+      const invalidList = invalidRows
+        .map((item) => `#${item.numero} (${getStatusLabel(item.status)})`)
+        .join(", ");
+      alert(`Só é permitido remover despesas em Rascunho ou Aguardando Aprovação.\nItens bloqueados: ${invalidList}`);
+      return;
+    }
+
+    if (!window.confirm("Confirma remoção dos itens selecionados? Essa ação é irreversível.")) {
+      return;
+    }
+
+    const confirmationText = getBulkDeleteConfirmationText(selectedIDS.length);
+    const typedConfirmation = window.prompt(
+      `Para confirmar a exclusão de ${selectedIDS.length} despesa(s), digite exatamente:\n${confirmationText}`,
+      ""
+    );
+
+    if (typedConfirmation === null) {
+      return;
+    }
+
+    if (String(typedConfirmation).trim().toUpperCase() !== confirmationText) {
+      alert("Confirmação inválida. Nenhuma despesa foi removida.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await api.post("/despesa/delete/selected", {
+        selectedItems: selectedIDS,
+        expectedCount: selectedIDS.length,
+        confirmationText,
+      });
+
+      const deletedCount = response?.data?.deletedCount || 0;
+      const blockedItems = Array.isArray(response?.data?.blockedItems) ? response.data.blockedItems : [];
+      const blockedCount = response?.data?.blockedCount || blockedItems.length;
+
+      await loadDespesas();
+      resetSelection();
+
+      alert(`${deletedCount} despesa(s) removida(s) com sucesso.`);
+    } catch (error) {
+      const blockedItems = Array.isArray(error?.response?.data?.blockedItems) ? error.response.data.blockedItems : [];
+      if (blockedItems.length > 0) {
+        const blockedList = blockedItems
+          .map((item) => `#${item.numero || item.id} (${item.reason})`)
+          .join(", ");
+        alert(`${error?.response?.data?.error || "Nenhuma despesa foi removida."}\n${blockedList}`);
+        return;
+      }
+
+      alert(error?.response?.data?.error || error?.message || "Erro ao remover despesas");
+    } finally {
+      setLoading(false);
     }
   }
 
   const handleChange = (state) => {
     setRowsSel(state.selectedRows);
-    
-    const AllItems = []
-    state.selectedRows.map((item) => {
-      AllItems.push(item._id)
-    })
+
+    const AllItems = [];
+    state.selectedRows.forEach((item) => {
+      AllItems.push(item._id);
+    });
     setselectedIDS(AllItems);
   };
 
@@ -678,6 +742,11 @@ export default function List_Despesas({ history }) {
       return;
     }
 
+    if (selectedIDS.length > MAX_SELECTED_DESPESAS_PDF) {
+      alert(`Selecione no máximo ${MAX_SELECTED_DESPESAS_PDF} despesas por exportação em PDF.`);
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await api.post("/generatePDFDespesaFotos/selected", {
@@ -686,6 +755,9 @@ export default function List_Despesas({ history }) {
 
       if (response?.data?.pdflink) {
         window.open(response.data.pdflink, "_blank");
+        if (response?.data?.skippedCount > 0) {
+          alert(`PDF gerado com sucesso. ${response.data.skippedCount} despesa(s) sem foto foram ignoradas.`);
+        }
         return;
       }
 
@@ -822,8 +894,9 @@ const exportToExcelSelected = async () => {
                         className="btn btn-danger btn-flat margin"
                         style={{ whiteSpace: 'nowrap', marginRight: 6, padding: '6px 8px', fontSize: 12 }}
                         onClick={() => {
-                          handleRemove("", "");
+                          handleRemove();
                         }}
+                        disabled={loading}
                       >
                         Remover Selecionados
                       </button>
@@ -836,6 +909,7 @@ const exportToExcelSelected = async () => {
                             onClick={() => {
                               exportToExcelSelected();
                             }}
+                            disabled={loading}
                           >
                             Exportar Selecionados
                           </button>
@@ -846,6 +920,7 @@ const exportToExcelSelected = async () => {
                             onClick={() => {
                               exportFotosPdfSelected();
                             }}
+                            disabled={loading}
                           >
                             Exportar Fotos (PDF)
                           </button>
@@ -864,6 +939,7 @@ const exportToExcelSelected = async () => {
                               onClick={() => {
                                 markSelectedAsPaid();
                               }}
+                              disabled={loading}
                             >
                               Adicionar como pago
                             </button>
@@ -877,6 +953,7 @@ const exportToExcelSelected = async () => {
                         onClick={() => {
                           exportToExcel();
                         }}
+                        disabled={loading}
                       >
                         Exportar Tudo
                       </button>
@@ -1012,6 +1089,7 @@ const exportToExcelSelected = async () => {
                       data={filteredProd}
                       onRowClicked={goToPage}
                       selectableRows
+                      clearSelectedRows={clearSelectedRows}
                       pagination
                       paginationPerPage={50}
                       paginationRowsPerPageOptions={[50, 100, 200]}
