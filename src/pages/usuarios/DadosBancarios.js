@@ -30,6 +30,25 @@ export function limpaDadosBancarios(dados) {
   return { ...d, pix_tipo_chave: "", pix_chave: "" };
 }
 
+// Colunas de dados bancários usadas na exportação de despesas (Excel)
+export function colunasDadosBancarios(dados) {
+  const d = normalizaDadosBancarios(dados);
+  const isPix = d.tipo === "pix";
+  const isConta = d.tipo === "conta";
+  return {
+    "Forma de Pagamento": isPix ? "Pix" : isConta ? "Conta bancária" : "",
+    "Tipo Chave Pix": isPix ? d.pix_tipo_chave : "",
+    "Chave Pix": isPix ? d.pix_chave : "",
+    "Banco": isConta ? d.banco : "",
+    "Tipo de Conta": isConta ? d.tipo_conta : "",
+    "Agência": isConta ? d.agencia : "",
+    "Conta": isConta ? (d.conta + (d.conta_digito ? "-" + d.conta_digito : "")) : "",
+    "Titular": isPix || isConta ? d.titular_nome : "",
+    "Tipo Doc. Titular": isPix || isConta ? d.titular_tipo_doc : "",
+    "CPF/CNPJ Titular": isPix || isConta ? d.titular_documento : ""
+  };
+}
+
 function Campo({ label, children }) {
   return (
     <div className="form-group">

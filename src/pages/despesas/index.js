@@ -9,6 +9,7 @@ import './despesas.css'
 import "react-data-table-component-extensions/dist/index.css";
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { colunasDadosBancarios } from "../usuarios/DadosBancarios";
 
 const DEFAULT_DESPESAS_COLUMN_ORDER = [
   "numero",
@@ -793,6 +794,7 @@ export default function List_Despesas({ history }) {
         data[index].DataPagamento = data[index].iddespesa[0].paidAt ? formatDate(data[index].iddespesa[0].paidAt) : "";
         data[index].Tipo = data[index].categoriaText;
         data[index].Valor = data[index].valor;
+        Object.assign(data[index], colunasDadosBancarios(data[index].iddespesa[0].requesterBank));
 
         delete data[index].iddespesa;
         delete data[index].categoriaText;
@@ -849,7 +851,8 @@ const exportToExcelSelected = async () => {
         : item.iddespesa.status == "3" ? "Reprovado"
         :"",
         Tipo: item.categoriaText,
-        Valor: item.valor
+        Valor: item.valor,
+        ...colunasDadosBancarios(item.iddespesa.requesterBank)
       })
     })
   }
