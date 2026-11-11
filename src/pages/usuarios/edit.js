@@ -5,6 +5,7 @@ import api from "../../services/api";
 import Header from "../../Header";
 import SideMenu from "../../SideMenu";
 import Footer from "../../Footer";
+import DadosBancarios, { DADOS_BANCARIOS_VAZIO, normalizaDadosBancarios, limpaDadosBancarios } from "./DadosBancarios";
 
 export default function Edit_Usuario({ history }) {
   
@@ -27,6 +28,7 @@ export default function Edit_Usuario({ history }) {
     const [idarea, setIdarea] = useState("");
     const [area, setArea] = useState("");
     const [areas, setAreas] = useState([]);
+    const [dadosBancarios, setDadosBancarios] = useState(DADOS_BANCARIOS_VAZIO);
 
     const url_string = window.location.href;
     const param = url_string.split("/");
@@ -66,6 +68,7 @@ export default function Edit_Usuario({ history }) {
         setDesp_apprNot(data[0].receive_final_despesa);
         setArea(data[0].area);
         setIdarea(data[0].idarea);
+        setDadosBancarios(normalizaDadosBancarios(data[0].dados_bancarios));
 
       }
     
@@ -91,9 +94,10 @@ export default function Edit_Usuario({ history }) {
           desp_appr: desp_appr,
           receive_final_despesa: desp_apprNot,
           area: area,
-          idarea: idarea
+          idarea: idarea,
+          dados_bancarios: limpaDadosBancarios(dadosBancarios)
         };
-        
+
         await api.put('/usuarios/'+param[4], dataobj);
         history.push('/usuarios');
   
@@ -411,10 +415,9 @@ export default function Edit_Usuario({ history }) {
 
                         </div>
                         </div>
-                      
 
-                     
-                                    
+                    <DadosBancarios value={dadosBancarios} onChange={setDadosBancarios} />
+
                   </div>
 
                   <div className="box-footer">

@@ -4,6 +4,7 @@ import api from "../../services/api";
 import Header from "../../Header";
 import SideMenu from "../../SideMenu";
 import Footer from "../../Footer";
+import DadosBancarios, { DADOS_BANCARIOS_VAZIO, limpaDadosBancarios } from "./DadosBancarios";
 
 export default function New_Usuario({ history }) {
   
@@ -26,6 +27,7 @@ export default function New_Usuario({ history }) {
     const [idarea, setIdarea] = useState("");
     const [area, setArea] = useState("");
     const [areas, setAreas] = useState([]);
+    const [dadosBancarios, setDadosBancarios] = useState(DADOS_BANCARIOS_VAZIO);
 
     const checkadmin = () => {
       const b_admin = localStorage.getItem("sfadmin");
@@ -62,7 +64,8 @@ export default function New_Usuario({ history }) {
           desp_appr: desp_appr,
           receive_final_despesa: desp_apprNot,
           area: area,
-          idarea: idarea
+          idarea: idarea,
+          dados_bancarios: limpaDadosBancarios(dadosBancarios)
         };
         
         await api.post('/usuarios/', dataobj).then((res) => {
@@ -402,10 +405,8 @@ export default function New_Usuario({ history }) {
                         </div>
                         </div>
 
+                    <DadosBancarios value={dadosBancarios} onChange={setDadosBancarios} />
 
-
-                     
-                                    
                   </div>
 
                   <div className="box-footer">
